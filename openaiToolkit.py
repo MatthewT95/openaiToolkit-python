@@ -1,4 +1,6 @@
 from openai import OpenAI
+import re
+import json
 class chatgpt_messages:
     def __init__(self):
         self.SYSTEM_ROLE_FLAG="system"
@@ -63,6 +65,13 @@ class chatgpt_client:
         self.SYSTEM_ROLE_FLAG="system"
         self.ASSISTANT_ROLE_FLAG="assistant"
         self.USER_ROLE_FLAG="user"
+        self.APIs={}
+    def add_api(self,api_name,api_function):
+        self.APIs[api_name]=api_function
+    def update_api(self,api_name,api_function):
+        self.APIs[api_name]=api_function
+    def remove_api(self,api_name):
+        del self.APIs[api_name]
     def set_dynamic_system_message(self,key,message):
         self.dynamic_system_messages[key]=message
     def set_parameters(self,parameters):
@@ -95,7 +104,13 @@ class chatgpt_client:
         request["messages"]=self.messages.get_messages()
         for key in self.dynamic_system_messages:
             request["messages"].append({"role":"system","content":self.dynamic_system_messages[key]})
+        request["messages"].append({"role":"system","content":"<API_CALL|(api_name)|(json for the API request)>."})
         response = self.client.chat.completions.create(**request)
         assistant_message = response.choices[0].message.content
+        pattern = r"<API_CALL\|[^|]+\|[^>]+>"
+        for api_call in re.finditer(pattern,assistant_message):
+            api_call_parts=api_call.string[1:-1].split("|")
+            if self.APIs.__contains__(api_call_parts[1]):
+                self.APIs[api_call_parts[1]](api_call_parts[2])
         self.messages.append_assistant_message(assistant_message)
         return assistant_message
