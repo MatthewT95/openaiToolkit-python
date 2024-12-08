@@ -51,6 +51,5 @@ class chatgpt_parameters:
 def chatgpt_send(chatgpt_client,chatgpt_parameters,chatgpt_messages):
     request=chatgpt_parameters.get_parameters()
     request["messages"]=chatgpt_messages.get_messages()
-    print(request)
     response = chatgpt_client.chat.completions.create(**request)
     return response
