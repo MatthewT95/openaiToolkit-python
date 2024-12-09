@@ -1,11 +1,24 @@
-# required imports
+# Importing OpenAI client to interact with OpenAI's API
 from openai import OpenAI
+
+# Importing regular expressions for pattern matching (e.g., API calls in responses)
 import re
+
+# Importing JSON for handling API responses and requests
 import json
+
+# Importing tiktoken for tokenizing inputs (if token counting is needed)
 import tiktoken
+
+# Importing requests for downloading images and handling web requests
 import requests
+
+# Importing webbrowser for opening URLs (e.g., image links) in the browser
 import webbrowser
+
+# Importing numpy for mathematical operations, such as computing cosine similarity
 import numpy as np
+
 
 def download_img(image_url, save_path="./image.jpg"):
     """
