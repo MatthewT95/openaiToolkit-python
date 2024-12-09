@@ -99,18 +99,23 @@ class chatgpt_client:
     def get_messages(self):
         return self.messages.get_messages()
     def submit(self,user_message):
+        api_message=""
         self.messages.append_user_message(user_message)
         request=self.parameters.get_parameters()
         request["messages"]=self.messages.get_messages()
         for key in self.dynamic_system_messages:
             request["messages"].append({"role":"system","content":self.dynamic_system_messages[key]})
         request["messages"].append({"role":"system","content":"<API_CALL|(api_name)|(json for the API request)>."})
+        request["messages"].append({"role":"system","content":"APIs may respond from requests with their messages inside <API_RESPONSE> tags."})
         response = self.client.chat.completions.create(**request)
         assistant_message = response.choices[0].message.content
         pattern = r"<API_CALL\|[^|]+\|[^>]+>"
         for api_call in re.finditer(pattern,assistant_message):
             api_call_parts=api_call.string[1:-1].split("|")
             if self.APIs.__contains__(api_call_parts[1]):
-                self.APIs[api_call_parts[1]](api_call_parts[2])
+                api_response = self.APIs[api_call_parts[1]](json.loads(api_call_parts[2]))
+                if not response == None and not response=="":
+                    api_message+="<API_RESPONSE name=\"{}\">{}</API_RESPONSE>".format(api_call_parts[1],api_response)
         self.messages.append_assistant_message(assistant_message)
-        return assistant_message
+
+        return assistant_message,api_message
