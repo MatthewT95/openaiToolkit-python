@@ -10,15 +10,16 @@ import json
 # Importing tiktoken for tokenizing inputs (if token counting is needed)
 import tiktoken
 
-# Importing requests for downloading images and handling web requests
-import requests
-
 # Importing webbrowser for opening URLs (e.g., image links) in the browser
 import webbrowser
 
 # Importing numpy for mathematical operations, such as computing cosine similarity
 import numpy as np
 
+
+import os  # Provides utilities for interacting with the file system, such as checking paths and creating directories.
+import requests  # Used for making HTTP requests, such as fetching the image from a URL.
+from urllib.parse import urlparse  # Helps validate and parse URLs to ensure they are properly formatted.
 
 def download_img(image_url, save_path="./image.jpg"):
     """
@@ -30,14 +31,45 @@ def download_img(image_url, save_path="./image.jpg"):
                          Defaults to './image.jpg'.
 
     Returns:
-        None
+        bool: True if the image was successfully downloaded and saved, False otherwise.
     """
-    # Fetch the image content from the provided URL
-    img_data = requests.get(image_url).content
+    try:
+        # Validate the image URL
+        if not isinstance(image_url, str) or not image_url.strip():
+            raise ValueError("The image URL must be a non-empty string.")
+        
+        parsed_url = urlparse(image_url)
+        if not parsed_url.scheme or not parsed_url.netloc:
+            raise ValueError("The image URL is not valid.")
+        
+        # Validate the save path
+        if not isinstance(save_path, str) or not save_path.strip():
+            raise ValueError("The save path must be a non-empty string.")
+        
+        save_dir = os.path.dirname(save_path)
+        if save_dir and not os.path.exists(save_dir):
+            os.makedirs(save_dir)
 
-    # Open the specified file in binary write mode and save the image data
-    with open(save_path, 'wb') as handler:
-        handler.write(img_data)
+        # Fetch the image content from the provided URL
+        response = requests.get(image_url, timeout=10)
+        response.raise_for_status()  # Raise an HTTPError for bad HTTP responses (4xx or 5xx)
+
+        # Save the image content to the specified path
+        with open(save_path, 'wb') as handler:
+            handler.write(response.content)
+
+        print(f"Image successfully downloaded and saved to {save_path}")
+        return True
+
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to download the image: {e}")
+    except ValueError as e:
+        print(f"Validation error: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    return False
+
 
 class Chatgpt_messages:
     """
