@@ -71,6 +71,21 @@ def download_img(image_url, save_path="./image.jpg"):
     return False
 
 
+class Message_roles:
+    """
+    Centralized configuration for constants used across the application.
+    """
+    SYSTEM_ROLE_FLAG = "system"
+    ASSISTANT_ROLE_FLAG = "assistant"
+    USER_ROLE_FLAG = "user"
+
+    @staticmethod
+    def get_valid_roles():
+        """
+        Returns a set of valid roles for message validation.
+        """
+        return {Message_roles.SYSTEM_ROLE_FLAG, Message_roles.ASSISTANT_ROLE_FLAG, Message_roles.USER_ROLE_FLAG}
+
 class Chatgpt_messages:
     """
     A class to manage and organize messages exchanged in a ChatGPT-like system.
@@ -87,10 +102,6 @@ class Chatgpt_messages:
             messages (list): List to store message objects in the format 
                              {"role": <role>, "content": <message content>}.
         """
-        self.SYSTEM_ROLE_FLAG = "system"
-        self.ASSISTANT_ROLE_FLAG = "assistant"
-        self.USER_ROLE_FLAG = "user"
-        self.messages = []  # Initialize an empty list to store messages
 
     def append_user_message(self, message):
         """
@@ -99,7 +110,7 @@ class Chatgpt_messages:
         Parameters:
             message (str): The content of the user's message.
         """
-        self.messages.append({"role": self.USER_ROLE_FLAG, "content": message})
+        self.messages.append({"role": Message_roles.USER_ROLE_FLAG, "content": message})
 
     def append_system_message(self, message):
         """
@@ -108,7 +119,7 @@ class Chatgpt_messages:
         Parameters:
             message (str): The content of the system's message.
         """
-        self.messages.append({"role": self.SYSTEM_ROLE_FLAG, "content": message})
+        self.messages.append({"role": Message_roles.SYSTEM_ROLE_FLAG, "content": message})
 
     def append_assistant_message(self, message):
         """
@@ -117,7 +128,7 @@ class Chatgpt_messages:
         Parameters:
             message (str): The content of the assistant's message.
         """
-        self.messages.append({"role": self.ASSISTANT_ROLE_FLAG, "content": message})
+        self.messages.append({"role": Message_roles.ASSISTANT_ROLE_FLAG, "content": message})
 
     def clear_messages(self):
         """
@@ -150,7 +161,7 @@ class Chatgpt_messages:
         if not isinstance(messages, list):
             raise ValueError("Messages must be a list.")
 
-        valid_roles = {"system", "assistant", "user"}
+        valid_roles = Message_roles.get_valid_roles()
         for message in messages:
             if not isinstance(message, dict):
                 raise ValueError(f"Each message must be a dictionary. Invalid message: {message}")
@@ -486,9 +497,6 @@ class Chatgpt_client:
         self.messages = Chatgpt_messages()  # ChatGPT messages instance
         self.dynamic_system_messages = {}  # Dynamic system messages
         self.client = OpenAI(api_key=key)  # OpenAI client instance
-        self.SYSTEM_ROLE_FLAG = "system"  # Flag for system role
-        self.ASSISTANT_ROLE_FLAG = "assistant"  # Flag for assistant role
-        self.USER_ROLE_FLAG = "user"  # Flag for user role
         self.APIs = {}  # Dictionary to manage API functions
 
     def add_api(self, api_name, api_function):
@@ -597,11 +605,11 @@ class Chatgpt_client:
 
         # Add dynamic system messages to the request
         for key in self.dynamic_system_messages:
-            request["messages"].append({"role": "system", "content": self.dynamic_system_messages[key]})
+            request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": self.dynamic_system_messages[key]})
 
         # Append API call instructions to the request
-        request["messages"].append({"role": "system", "content": "<API_CALL|(api_name)|(json for the API request)>."})
-        request["messages"].append({"role": "system", "content": "APIs may respond from requests with their messages inside <API_RESPONSE> tags."})
+        request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": "<API_CALL|(api_name)|(json for the API request)>."})
+        request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": "APIs may respond from requests with their messages inside <API_RESPONSE> tags."})
 
         # Send the request to the OpenAI API
         response = self.client.chat.completions.create(**request)
