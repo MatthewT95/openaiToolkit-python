@@ -9,8 +9,11 @@ import numpy as np  # Mathematical operations, e.g., cosine similarity
 import logging
 from openai_helpers import download_img
 from openai_classes import *
+<<<<<<< HEAD
 import os
 import importlib.util
+=======
+>>>>>>> bef093c7f13b8ca72b726fc4e5d4d44136eee06b
 
 # Configure the logging
 logging.basicConfig(
@@ -205,7 +208,7 @@ class Dalle_client:
 class Chatgpt_client:
     """
     A client class to interact with OpenAI's ChatGPT API, manage parameters, messages,
-    variable system messages, and APIs for enhanced functionality.
+    dynamic system messages, and APIs for enhanced functionality.
     """
 
     def __init__(self, key):
@@ -217,10 +220,9 @@ class Chatgpt_client:
         """
         self.parameters = Chatgpt_parameters()  # ChatGPT parameters instance
         self.messages = Chatgpt_messages()  # ChatGPT messages instance
-        self.variable_system_messages = {}  # variable system messages
+        self.dynamic_system_messages = {}  # Dynamic system messages
         self.client = OpenAI(api_key=key)  # OpenAI client instance
         self.APIs = {}  # Dictionary to manage API functions
-        self.API_Docs={}
         self.input_tokens_max=64
         self.max_token_enforcement=2 # 0 Don't enforce, 1 Return error message, 2 Trim message
 
@@ -257,42 +259,16 @@ class Chatgpt_client:
             api_name (str): The name of the API to remove.
         """
         del self.APIs[api_name]
-    def load_apis_from_folder(self,folder_path):
+
+    def set_dynamic_system_message(self, key, message):
         """
-        variable loads APIs from a folder
+        Sets a dynamic system message.
 
         Parameters:
-            folder_path (str): The path to the folder containing API modules.
+            key (str): The identifier for the dynamic message.
+            message (str): The content of the dynamic message.
         """
-        for subfolder in os.listdir(folder_path):
-            subfolder_path = os.path.join(folder_path, subfolder)
-            if os.path.isdir(subfolder_path):
-                main_file = os.path.join(subfolder_path, "main.py")
-                if os.path.exists(main_file):
-                    # Import the main function dynamically
-                    spec = importlib.util.spec_from_file_location(f"{subfolder}.main", main_file)
-                    module = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(module)
-                    
-                    # Add the main function to the Chatgpt_client
-                    if hasattr(module, "main"):
-                        self.add_api(subfolder, module.main)
-
-                    # Optionally, load the documentation
-                    doc_file = os.path.join(subfolder_path, "documentation.txt")
-                    if os.path.exists(doc_file):
-                        with open(doc_file, "r") as doc:
-                            self.API_Docs[subfolder] = doc.read()
-
-    def set_variable_system_message(self, key, message):
-        """
-        Sets a variable system message.
-
-        Parameters:
-            key (str): The identifier for the variable message.
-            message (str): The content of the variable message.
-        """
-        self.variable_system_messages[key] = message
+        self.dynamic_system_messages[key] = message
 
     def set_parameters(self, parameters):
         """
@@ -369,17 +345,14 @@ class Chatgpt_client:
         request = self.parameters.get_parameters()
         request["messages"] = self.messages.get_messages()
 
-        # Add variable system messages to the request
-        for key in self.variable_system_messages:
-            request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": self.variable_system_messages[key]})
+        # Add dynamic system messages to the request
+        for key in self.dynamic_system_messages:
+            request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": self.dynamic_system_messages[key]})
 
         # Append API call instructions to the request
-        request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": "To execute an api <API_CALL|(api_name)|(json for the API request)>."})
+        request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": "<API_CALL|(api_name)|(json for the API request)>."})
         request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": "APIs may respond from requests with their messages inside <API_RESPONSE> tags."})
 
-         # Add api doc system messages to the request
-        for key in self.API_Docs:
-            request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": self.API_Docs[key]})
         # Send the request to the OpenAI API
         response = self.client.chat.completions.create(**request)
 
@@ -398,7 +371,7 @@ class Chatgpt_client:
                 if api_response not in [None, ""]:
                     # Format the API response within <API_RESPONSE> tags
                     api_message += "<API_RESPONSE name=\"{}\">{}</API_RESPONSE>".format(api_call_parts[1], api_response)
-            assistant_message=assistant_message.replace(api_call.string,f"<{api_call_parts[1]}>")
+
         # Append the assistant's message to the message history
         self.messages.append_assistant_message(assistant_message)
 
