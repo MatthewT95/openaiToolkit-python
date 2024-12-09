@@ -442,26 +442,50 @@ class Text_embedding:
             embedding = json.loads(f.read())
         return embedding
 
-    def compare_embeddings(self, embedding_1, embedding_2):
-        """
-        Computes the cosine similarity between two embeddings.
+def compare_embeddings(self, embedding_1, embedding_2):
+    """
+    Computes the cosine similarity between two embeddings.
 
-        Parameters:
-            embedding_1 (list): The first embedding as a list of floats.
-            embedding_2 (list): The second embedding as a list of floats.
+    Parameters:
+        embedding_1 (list or np.ndarray): The first embedding as a list or numpy array of floats.
+        embedding_2 (list or np.ndarray): The second embedding as a list or numpy array of floats.
 
-        Returns:
-            float: The cosine similarity between the two embeddings.
-        """
-        # Convert embeddings to numpy arrays
-        embedding_1 = np.array(embedding_1)
-        embedding_2 = np.array(embedding_2)
+    Returns:
+        float: The cosine similarity between the two embeddings.
 
-        # Compute cosine similarity
-        cosine_similarity = np.dot(embedding_1, embedding_2) / (
-            np.linalg.norm(embedding_1) * np.linalg.norm(embedding_2)
-        )
-        return cosine_similarity
+    Raises:
+        ValueError: If the inputs are invalid (e.g., None, not the same dimension, or not numeric).
+    """
+    # Validate inputs
+    if embedding_1 is None or embedding_2 is None:
+        raise ValueError("Embedding inputs must not be None.")
+    
+    if not isinstance(embedding_1, (list, np.ndarray)) or not isinstance(embedding_2, (list, np.ndarray)):
+        raise ValueError("Embeddings must be lists or numpy arrays.")
+    
+    embedding_1 = np.array(embedding_1)
+    embedding_2 = np.array(embedding_2)
+
+    if embedding_1.ndim != 1 or embedding_2.ndim != 1:
+        raise ValueError("Embeddings must be 1-dimensional.")
+    
+    if embedding_1.shape[0] != embedding_2.shape[0]:
+        raise ValueError("Embeddings must have the same dimension.")
+
+    # Ensure embeddings contain numeric data
+    if not np.issubdtype(embedding_1.dtype, np.number) or not np.issubdtype(embedding_2.dtype, np.number):
+        raise ValueError("Embeddings must contain numeric values.")
+
+    # Compute cosine similarity
+    norm_1 = np.linalg.norm(embedding_1)
+    norm_2 = np.linalg.norm(embedding_2)
+
+    if norm_1 == 0 or norm_2 == 0:
+        raise ValueError("Embeddings must not have zero magnitude.")
+
+    cosine_similarity = np.dot(embedding_1, embedding_2) / (norm_1 * norm_2)
+    return cosine_similarity
+
 
 class Dalle_client:
     """
