@@ -7,8 +7,8 @@ import re  # Regular expressions for pattern matching
 import json  # JSON handling for API responses, requests, and file operations
 import numpy as np  # Mathematical operations, e.g., cosine similarity
 import logging
-from openAiToolkit.helper_functions import download_img
-from openAiToolkit.helper_classes import *
+from openai_helpers import download_img
+from openai_classes import *
 import os
 import importlib.util
 
