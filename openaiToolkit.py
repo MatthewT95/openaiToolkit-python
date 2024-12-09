@@ -602,7 +602,14 @@ class Chatgpt_client:
         self.dynamic_system_messages = {}  # Dynamic system messages
         self.client = OpenAI(api_key=key)  # OpenAI client instance
         self.APIs = {}  # Dictionary to manage API functions
+        self.input_tokens_max=64
+        self.max_token_enforcement=2 # 0 Don't enforce, 1 Return error message, 2 Trim message
 
+    def set_input_token_max(self,max_tokens):
+        self.input_tokens_max=max_tokens
+    def set_input_token_max_enforcement(self,method):
+        if method in range(2):
+            self.max_token_enforcement=method
     def add_api(self, api_name, api_function):
         """
         Adds a new API to the client.
@@ -700,6 +707,16 @@ class Chatgpt_client:
         """
         api_message = ""
 
+        tokenizer=tiktoken.encoding_for_model(self.parameters.model)
+        user_tokenized_message=tokenizer.encode(user_message)
+        if len(user_tokenized_message) > self.input_tokens_max and not self.max_token_enforcement==0:
+            if self.max_token_enforcement == 1:
+                logger.warning(f"Max input tokens exceeded. You used {len(user_tokenized_message)} tokens and the max is {self.input_tokens_max}.")
+                return f"Max input tokens exceeded. You used {len(user_tokenized_message)} tokens and the max is {self.input_tokens_max}.",""
+            elif self.max_token_enforcement == 2:
+                logger.warning(f"Max input tokens exceeded. You used {len(user_tokenized_message)} tokens and the max is {self.input_tokens_max}.")
+                logger.warning(f"Message was trimmed to max token length.")
+                user_message=tokenizer.decode(user_tokenized_message[:self.input_tokens_max])
         # Append the user message to the message history
         self.messages.append_user_message(user_message)
 
