@@ -1,0 +1,12 @@
+API Name: beep
+Description: This API generates beep/tone.
+Parameters:
+    - frequency: The frequency of the tone in hz. Defaults to 1000
+    - duration: The duration of the tone in ms. Defaults to 1000
+Return:
+    Returns a success message
+Example:
+    {
+        "frequency":1000,
+        "duration":1000
+    }
