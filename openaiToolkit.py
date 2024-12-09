@@ -20,7 +20,7 @@ logging.basicConfig(
     level=logging.INFO,  # Set default logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     format='%(asctime)s - %(levelname)s - %(message)s',  # Define log format
     handlers=[
-        logging.StreamHandler()  # Output to the console
+         logging.FileHandler("app.log"),  # Log to a file
     ]
 )
 
@@ -112,6 +112,7 @@ class Chatgpt_messages:
             messages (list): List to store message objects in the format 
                              {"role": <role>, "content": <message content>}.
         """
+        self.messages=[]
 
     def append_user_message(self, message):
         """
