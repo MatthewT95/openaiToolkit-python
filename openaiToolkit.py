@@ -1,7 +1,15 @@
 from openai import OpenAI
 import re
 import json
-class chatgpt_messages:
+import tiktoken
+import requests
+import webbrowser
+
+def download_img(image_url,save_path="./image.jpg"):
+    img_data = requests.get(image_url).content
+    with open(save_path, 'wb') as handler:
+        handler.write(img_data)
+class Chatgpt_messages:
     def __init__(self):
         self.SYSTEM_ROLE_FLAG="system"
         self.ASSISTANT_ROLE_FLAG="assistant"
@@ -19,7 +27,7 @@ class chatgpt_messages:
     def get_messages(self):
         return self.messages
 
-class chatgpt_parameters:
+class Chatgpt_parameters:
     def __init__(self):
         self.model="gpt-4o-mini"
         self.temperature=1
@@ -50,16 +58,37 @@ class chatgpt_parameters:
             "presence_penalty":self.presence_penalty
         }
 
-def chatgpt_send(openai_client,chatgpt_parameters,chatgpt_messages):
+def chatgpt_submit(openai_client,chatgpt_parameters,chatgpt_messages):
     request=chatgpt_parameters.get_parameters()
     request["messages"]=chatgpt_messages.get_messages()
     response = openai_client.chat.completions.create(**request)
     return response
 
-class chatgpt_client:
+class Dalle_client:
     def __init__(self,key):
-        self.parameters=chatgpt_parameters()
-        self.messages=chatgpt_messages()
+        self.client=OpenAI(api_key=key)
+        self.SIZES=["1024x1024","1024x1792","1792x1024"]
+        self.dalle_model="dall-e-3"
+        self.size=0
+        self.quality="standard"
+
+    def generate(self,prompt,save_path=""):
+        response = self.client.images.generate(
+                model=self.dalle_model,
+                prompt=prompt,
+                size=self.SIZES[self.size],
+                quality=self.quality,
+                n=1
+        )
+
+        image_url = response.data[0].url
+        if not save_path=="":
+            download_img(image_url,save_path)
+        return image_url
+class Chatgpt_client:
+    def __init__(self,key):
+        self.parameters=Chatgpt_parameters()
+        self.messages=Chatgpt_messages()
         self.dynamic_system_messages={}
         self.client=OpenAI(api_key=key)
         self.SYSTEM_ROLE_FLAG="system"
