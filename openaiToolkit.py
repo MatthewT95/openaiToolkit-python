@@ -1,3 +1,4 @@
+# required imports
 from openai import OpenAI
 import re
 import json
@@ -6,8 +7,22 @@ import requests
 import webbrowser
 import numpy as np
 
-def download_img(image_url,save_path="./image.jpg"):
+def download_img(image_url, save_path="./image.jpg"):
+    """
+    Downloads an image from a given URL and saves it to the specified path.
+
+    Parameters:
+        image_url (str): The URL of the image to download.
+        save_path (str): The file path where the downloaded image will be saved.
+                         Defaults to './image.jpg'.
+
+    Returns:
+        None
+    """
+    # Fetch the image content from the provided URL
     img_data = requests.get(image_url).content
+
+    # Open the specified file in binary write mode and save the image data
     with open(save_path, 'wb') as handler:
         handler.write(img_data)
 class Chatgpt_messages:
