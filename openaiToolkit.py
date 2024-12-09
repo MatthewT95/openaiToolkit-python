@@ -4,6 +4,7 @@ import json
 import tiktoken
 import requests
 import webbrowser
+import numpy as np
 
 def download_img(image_url,save_path="./image.jpg"):
     img_data = requests.get(image_url).content
@@ -63,6 +64,32 @@ def chatgpt_submit(openai_client,chatgpt_parameters,chatgpt_messages):
     request["messages"]=chatgpt_messages.get_messages()
     response = openai_client.chat.completions.create(**request)
     return response
+
+class Text_embedding:
+    def __init__(self,key):
+        self.client=OpenAI(api_key=key)
+    def get_embedding(self,text,model=0):
+        if model==0:
+            return self.client.embeddings.create(input=text,model="text-embedding-3-small").data[0].embedding
+        elif model==1:
+            return self.client.embeddings.create(input=text,model="text-embedding-3-large").data[0].embedding
+    def save_embedding(self,embedding,save_path):
+        f = open(save_path, "a")
+        f.write(json.dumps(embedding))
+        f.close()
+    def load_embedding(self,save_path):
+        f = open(save_path, "r")
+        embedding = json.loads(f.read())
+        f.close()
+        return embedding
+    def compare_embeddings(self,embedding_1,embedding_2):
+        # Example embeddings
+        embedding_1 = np.array(embedding_1)
+        embedding_2 = np.array(embedding_2)
+
+        # Compute cosine similarity
+        cosine_similarity = np.dot(embedding_1, embedding_2) / (np.linalg.norm(embedding_1) * np.linalg.norm(embedding_2))
+        return cosine_similarity
 
 class Dalle_client:
     def __init__(self,key):
