@@ -205,7 +205,7 @@ class Dalle_client:
 class Chatgpt_client:
     """
     A client class to interact with OpenAI's ChatGPT API, manage parameters, messages,
-    dynamic system messages, and APIs for enhanced functionality.
+    variable system messages, and APIs for enhanced functionality.
     """
 
     def __init__(self, key):
@@ -217,7 +217,7 @@ class Chatgpt_client:
         """
         self.parameters = Chatgpt_parameters()  # ChatGPT parameters instance
         self.messages = Chatgpt_messages()  # ChatGPT messages instance
-        self.dynamic_system_messages = {}  # Dynamic system messages
+        self.variable_system_messages = {}  # variable system messages
         self.client = OpenAI(api_key=key)  # OpenAI client instance
         self.APIs = {}  # Dictionary to manage API functions
         self.API_Docs={}
@@ -259,7 +259,7 @@ class Chatgpt_client:
         del self.APIs[api_name]
     def load_apis_from_folder(self,folder_path):
         """
-        Dynamically loads APIs from a folder
+        variable loads APIs from a folder
 
         Parameters:
             folder_path (str): The path to the folder containing API modules.
@@ -284,15 +284,15 @@ class Chatgpt_client:
                         with open(doc_file, "r") as doc:
                             self.API_Docs[subfolder] = doc.read()
 
-    def set_dynamic_system_message(self, key, message):
+    def set_variable_system_message(self, key, message):
         """
-        Sets a dynamic system message.
+        Sets a variable system message.
 
         Parameters:
-            key (str): The identifier for the dynamic message.
-            message (str): The content of the dynamic message.
+            key (str): The identifier for the variable message.
+            message (str): The content of the variable message.
         """
-        self.dynamic_system_messages[key] = message
+        self.variable_system_messages[key] = message
 
     def set_parameters(self, parameters):
         """
@@ -369,15 +369,15 @@ class Chatgpt_client:
         request = self.parameters.get_parameters()
         request["messages"] = self.messages.get_messages()
 
-        # Add dynamic system messages to the request
-        for key in self.dynamic_system_messages:
-            request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": self.dynamic_system_messages[key]})
+        # Add variable system messages to the request
+        for key in self.variable_system_messages:
+            request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": self.variable_system_messages[key]})
 
         # Append API call instructions to the request
         request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": "To execute an api <API_CALL|(api_name)|(json for the API request)>."})
         request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": "APIs may respond from requests with their messages inside <API_RESPONSE> tags."})
 
-         # Add dynamic system messages to the request
+         # Add api doc system messages to the request
         for key in self.API_Docs:
             request["messages"].append({"role":Message_roles.SYSTEM_ROLE_FLAG, "content": self.API_Docs[key]})
         # Send the request to the OpenAI API
