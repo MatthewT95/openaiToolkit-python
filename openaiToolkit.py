@@ -13,6 +13,19 @@ import webbrowser  # Opening URLs in the default web browser
 # OpenAI-specific imports
 from openai import OpenAI  # OpenAI client for interacting with the API
 import tiktoken  # Tokenization library for token counting (if needed)
+import logging
+
+# Configure the logging
+logging.basicConfig(
+    level=logging.INFO,  # Set default logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Define log format
+    handlers=[
+        logging.StreamHandler()  # Output to the console
+    ]
+)
+
+# Create a logger instance
+logger = logging.getLogger(__name__)
 
 
 def download_img(image_url, save_path="./image.jpg"):
@@ -30,14 +43,17 @@ def download_img(image_url, save_path="./image.jpg"):
     try:
         # Validate the image URL
         if not isinstance(image_url, str) or not image_url.strip():
+            logger.error("The image URL must be a non-empty string.")
             raise ValueError("The image URL must be a non-empty string.")
         
         parsed_url = urlparse(image_url)
         if not parsed_url.scheme or not parsed_url.netloc:
+            logger.error("The image URL is not valid. "+image_url)
             raise ValueError("The image URL is not valid.")
         
         # Validate the save path
         if not isinstance(save_path, str) or not save_path.strip():
+            logger.error("The save path must be a non-empty string. "+save_path)
             raise ValueError("The save path must be a non-empty string.")
         
         save_dir = os.path.dirname(save_path)
@@ -52,7 +68,7 @@ def download_img(image_url, save_path="./image.jpg"):
         with open(save_path, 'wb') as handler:
             handler.write(response.content)
 
-        print(f"Image successfully downloaded and saved to {save_path}")
+        logger.info(f"Image successfully downloaded and saved to {save_path}")
         return True
 
     except requests.exceptions.RequestException as e:
@@ -158,10 +174,13 @@ class Chatgpt_messages:
         valid_roles = Message_roles.get_valid_roles()
         for message in messages:
             if not isinstance(message, dict):
+                logger.error("Each message must be a dictionary. Invalid message: {message}")
                 raise ValueError(f"Each message must be a dictionary. Invalid message: {message}")
             if "role" not in message or message["role"] not in valid_roles:
+                logger.error(f"Each message must have a 'role' key with a value of 'system', 'assistant', or 'user'. Invalid message: {message}")
                 raise ValueError(f"Each message must have a 'role' key with a value of 'system', 'assistant', or 'user'. Invalid message: {message}")
             if "content" not in message or not isinstance(message["content"], str):
+                logger.error(f"Each message must have a 'content' key with a non-empty string value. Invalid message: {message}")
                 raise ValueError(f"Each message must have a 'content' key with a non-empty string value. Invalid message: {message}")
 
         return messages
@@ -306,10 +325,12 @@ class Chatgpt_parameters:
             ValueError: If any parameter is invalid.
         """
         if not isinstance(parameters, dict):
+            logger.error("Chat completion parameters must be a dictionary.")
             raise ValueError("Parameters must be a dictionary.")
 
         # Mandatory key
         if "model" not in parameters or not isinstance(parameters["model"], str):
+            logger.error("Chat completion parameters must have key model.")
             raise ValueError("The 'model' key is mandatory and must be a non-empty string.")
 
         # Validate optional keys
@@ -322,6 +343,7 @@ class Chatgpt_parameters:
         }
         for key, (min_val, max_val) in valid_keys.items():
             if key in parameters and not (min_val <= parameters[key] <= max_val):
+                logger.error(f"The '{key}' must be between {min_val} and {max_val}.")
                 raise ValueError(f"The '{key}' must be between {min_val} and {max_val}.")
 
         return parameters
@@ -349,6 +371,7 @@ def chatgpt_submit(openai_client, chatgpt_parameters, chatgpt_messages):
         elif isinstance(chatgpt_parameters, Chatgpt_parameters):
             parameters = Chatgpt_parameters.validate(chatgpt_parameters.get_parameters())
         else:
+            logger.error("The 'chatgpt_parameters' argument must be a dictionary or a ChatgptParameters object.")
             raise ValueError("The 'chatgpt_parameters' argument must be a dictionary or a ChatgptParameters object.")
 
         # Validate and retrieve messages
@@ -357,6 +380,7 @@ def chatgpt_submit(openai_client, chatgpt_parameters, chatgpt_messages):
         elif isinstance(chatgpt_messages, Chatgpt_messages):
             messages = Chatgpt_messages.validate(chatgpt_messages.get_messages())
         else:
+            logger.error("The 'chatgpt_messages' argument must be a list or a ChatgptMessages object.")
             raise ValueError("The 'chatgpt_messages' argument must be a list or a ChatgptMessages object.")
 
         # Add messages to the parameters
@@ -368,12 +392,15 @@ def chatgpt_submit(openai_client, chatgpt_parameters, chatgpt_messages):
 
     except OpenAI.error.OpenAIError as e:
         # Handle OpenAI-specific errors
+        logger.error(f"OpenAI API error: {e}")
         print(f"OpenAI API error: {e}")
     except ValueError as e:
         # Handle validation issues
+        logger.error(f"Input validation error: {e}")
         print(f"Input validation error: {e}")
     except Exception as e:
         # Handle unexpected errors
+        logger.error(f"An unexpected error occurred: {e}")
         print(f"An unexpected error occurred: {e}")
 
     return None
@@ -472,22 +499,27 @@ class Text_embedding:
         """
         # Validate inputs
         if embedding_1 is None or embedding_2 is None:
+            logger.error("Embedding inputs must not be None.")
             raise ValueError("Embedding inputs must not be None.")
         
         if not isinstance(embedding_1, (list, np.ndarray)) or not isinstance(embedding_2, (list, np.ndarray)):
+            logger.error("Embeddings must be lists or numpy arrays.")
             raise ValueError("Embeddings must be lists or numpy arrays.")
         
         embedding_1 = np.array(embedding_1)
         embedding_2 = np.array(embedding_2)
 
         if embedding_1.ndim != 1 or embedding_2.ndim != 1:
+            logger.error("Embeddings must be 1-dimensional.")
             raise ValueError("Embeddings must be 1-dimensional.")
         
         if embedding_1.shape[0] != embedding_2.shape[0]:
+            logger.error("Embeddings must have the same dimension.")
             raise ValueError("Embeddings must have the same dimension.")
 
         # Ensure embeddings contain numeric data
         if not np.issubdtype(embedding_1.dtype, np.number) or not np.issubdtype(embedding_2.dtype, np.number):
+            logger.error("Embeddings must contain numeric values.")
             raise ValueError("Embeddings must contain numeric values.")
 
         # Compute cosine similarity
@@ -495,6 +527,7 @@ class Text_embedding:
         norm_2 = np.linalg.norm(embedding_2)
 
         if norm_1 == 0 or norm_2 == 0:
+            logger.error("Embeddings must not have zero magnitude.")
             raise ValueError("Embeddings must not have zero magnitude.")
 
         cosine_similarity = np.dot(embedding_1, embedding_2) / (norm_1 * norm_2)
