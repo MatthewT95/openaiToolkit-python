@@ -133,6 +133,33 @@ class Chatgpt_messages:
             list: A list of message objects.
         """
         return self.messages
+    @staticmethod
+    def validate(messages):
+        """
+        Validates the messages list.
+
+        Parameters:
+            messages (list): The list of message dictionaries.
+
+        Returns:
+            list: The validated messages list.
+
+        Raises:
+            ValueError: If any message is invalid or improperly formatted.
+        """
+        if not isinstance(messages, list):
+            raise ValueError("Messages must be a list.")
+
+        valid_roles = {"system", "assistant", "user"}
+        for message in messages:
+            if not isinstance(message, dict):
+                raise ValueError(f"Each message must be a dictionary. Invalid message: {message}")
+            if "role" not in message or message["role"] not in valid_roles:
+                raise ValueError(f"Each message must have a 'role' key with a value of 'system', 'assistant', or 'user'. Invalid message: {message}")
+            if "content" not in message or not isinstance(message["content"], str):
+                raise ValueError(f"Each message must have a 'content' key with a non-empty string value. Invalid message: {message}")
+
+        return messages
 
 
 class Chatgpt_parameters:
@@ -228,30 +255,86 @@ class Chatgpt_parameters:
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty
         }
+    @staticmethod
+    def validate(parameters):
+        """
+        Validates the parameters dictionary.
 
+        Parameters:
+            parameters (dict): The dictionary containing configuration parameters.
+
+        Returns:
+            dict: The validated parameters dictionary.
+
+        Raises:
+            ValueError: If the mandatory 'model' key is missing or its value is invalid.
+        """
+        if not isinstance(parameters, dict):
+            raise ValueError("Parameters must be a dictionary.")
+
+        # Mandatory key
+        if "model" not in parameters or not isinstance(parameters["model"], str):
+            raise ValueError("The 'model' key is mandatory and must be a non-empty string.")
+
+        # Warn about extra keys
+        valid_keys = {"model", "temperature", "max_tokens", "top_p", "frequency_penalty", "presence_penalty"}
+        extra_keys = set(parameters.keys()) - valid_keys
+        if extra_keys:
+            print(f"Warning: The following extra keys are present and will be ignored: {extra_keys}")
+
+        return {key: parameters[key] for key in parameters if key in valid_keys}
+    
 def chatgpt_submit(openai_client, chatgpt_parameters, chatgpt_messages):
     """
     Submits a request to the OpenAI API using the provided parameters and messages.
 
     Parameters:
         openai_client (object): An instance of the OpenAI API client to handle the request.
-        chatgpt_parameters (Chatgpt_parameters): An object containing configuration parameters for the request.
-        chatgpt_messages (Chatgpt_messages): An object containing the list of messages to be included in the request.
+        chatgpt_parameters (object or dict): A ChatgptParameters object or a raw dictionary of parameters.
+        chatgpt_messages (object or list): A ChatgptMessages object or a raw list of messages.
 
     Returns:
-        response (dict): The response from the OpenAI API.
+        response (dict): The response from the OpenAI API if successful.
+        None: If an exception occurs during the API request or if inputs are invalid.
+
+    Raises:
+        ValueError: If the inputs or their derived values are invalid.
     """
-    # Retrieve parameters for the API request
-    request = chatgpt_parameters.get_parameters()
-    
-    # Add the list of messages to the request
-    request["messages"] = chatgpt_messages.get_messages()
-    
-    # Send the request to the OpenAI API and get the response
-    response = openai_client.chat.completions.create(**request)
-    
-    # Return the API response
-    return response
+    try:
+        # Validate and retrieve parameters
+        if isinstance(chatgpt_parameters, dict):
+            parameters = Chatgpt_parameters.validate(chatgpt_parameters)
+        elif isinstance(chatgpt_parameters, Chatgpt_parameters):
+            parameters = Chatgpt_parameters.validate(chatgpt_parameters.get_parameters())
+        else:
+            raise ValueError("The 'chatgpt_parameters' argument must be a dictionary or a ChatgptParameters object.")
+
+        # Validate and retrieve messages
+        if isinstance(chatgpt_messages, list):
+            messages = Chatgpt_messages.validate(chatgpt_messages)
+        elif isinstance(chatgpt_messages, Chatgpt_messages):
+            messages = Chatgpt_messages.validate(chatgpt_messages.get_messages())
+        else:
+            raise ValueError("The 'chatgpt_messages' argument must be a list or a ChatgptMessages object.")
+
+        # Add messages to the parameters
+        parameters["messages"] = messages
+
+        # Send the request to the OpenAI API and get the response
+        response = openai_client.chat.completions.create(**parameters)
+        return response
+
+    except OpenAI.error.OpenAIError as e:
+        # Handle OpenAI-specific errors
+        print(f"OpenAI API error: {e}")
+    except ValueError as e:
+        # Handle validation issues
+        print(f"Input validation error: {e}")
+    except Exception as e:
+        # Handle unexpected errors
+        print(f"An unexpected error occurred: {e}")
+
+    return None
 
 
 class Text_embedding:
