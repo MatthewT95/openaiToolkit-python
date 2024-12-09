@@ -203,7 +203,12 @@ class Chatgpt_parameters:
 
         Parameters:
             model (str): The identifier for the model (default: "gpt-4o-mini").
+
+        Raises:
+            ValueError: If the model is not a valid string.
         """
+        if not isinstance(model, str) or not model.strip():
+            raise ValueError("The 'model' must be a non-empty string.")
         self.model = model
 
     def set_temperature(self, temperature=1):
@@ -211,8 +216,13 @@ class Chatgpt_parameters:
         Sets the temperature for the model.
 
         Parameters:
-            temperature (float): Value controlling randomness (default: 1).
+            temperature (float): Value controlling randomness (default: 1, range: 0 to 2).
+
+        Raises:
+            ValueError: If temperature is not within the range [0, 2].
         """
+        if not (0 <= temperature <= 2):
+            raise ValueError("The 'temperature' must be between 0 and 2.")
         self.temperature = temperature
 
     def set_max_tokens(self, max_tokens=2048):
@@ -220,8 +230,13 @@ class Chatgpt_parameters:
         Sets the maximum number of tokens for the model's response.
 
         Parameters:
-            max_tokens (int): Maximum token count (default: 2048).
+            max_tokens (int): Maximum token count (default: 2048, must be positive).
+
+        Raises:
+            ValueError: If max_tokens is not a positive integer.
         """
+        if not isinstance(max_tokens, int) or max_tokens <= 0:
+            raise ValueError("The 'max_tokens' must be a positive integer.")
         self.max_tokens = max_tokens
 
     def set_top_p(self, top_p=1):
@@ -229,8 +244,13 @@ class Chatgpt_parameters:
         Sets the top-p value for nucleus sampling.
 
         Parameters:
-            top_p (float): Value controlling probability threshold for sampling (default: 1).
+            top_p (float): Value controlling probability threshold for sampling (default: 1, range: 0 to 1).
+
+        Raises:
+            ValueError: If top_p is not within the range [0, 1].
         """
+        if not (0 <= top_p <= 1):
+            raise ValueError("The 'top_p' must be between 0 and 1.")
         self.top_p = top_p
 
     def set_frequency_penalty(self, frequency_penalty=0):
@@ -238,8 +258,13 @@ class Chatgpt_parameters:
         Sets the frequency penalty to control repetition in responses.
 
         Parameters:
-            frequency_penalty (float): Penalty for repeated tokens (default: 0).
+            frequency_penalty (float): Penalty for repeated tokens (default: 0, range: -2 to 2).
+
+        Raises:
+            ValueError: If frequency_penalty is not within the range [-2, 2].
         """
+        if not (-2 <= frequency_penalty <= 2):
+            raise ValueError("The 'frequency_penalty' must be between -2 and 2.")
         self.frequency_penalty = frequency_penalty
 
     def set_presence_penalty(self, presence_penalty=0):
@@ -247,8 +272,13 @@ class Chatgpt_parameters:
         Sets the presence penalty to control token diversity in responses.
 
         Parameters:
-            presence_penalty (float): Penalty for encouraging diversity (default: 0).
+            presence_penalty (float): Penalty for encouraging diversity (default: 0, range: -2 to 2).
+
+        Raises:
+            ValueError: If presence_penalty is not within the range [-2, 2].
         """
+        if not (-2 <= presence_penalty <= 2):
+            raise ValueError("The 'presence_penalty' must be between -2 and 2.")
         self.presence_penalty = presence_penalty
 
     def get_parameters(self):
@@ -266,6 +296,7 @@ class Chatgpt_parameters:
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty
         }
+
     @staticmethod
     def validate(parameters):
         """
@@ -278,7 +309,7 @@ class Chatgpt_parameters:
             dict: The validated parameters dictionary.
 
         Raises:
-            ValueError: If the mandatory 'model' key is missing or its value is invalid.
+            ValueError: If any parameter is invalid.
         """
         if not isinstance(parameters, dict):
             raise ValueError("Parameters must be a dictionary.")
@@ -287,13 +318,19 @@ class Chatgpt_parameters:
         if "model" not in parameters or not isinstance(parameters["model"], str):
             raise ValueError("The 'model' key is mandatory and must be a non-empty string.")
 
-        # Warn about extra keys
-        valid_keys = {"model", "temperature", "max_tokens", "top_p", "frequency_penalty", "presence_penalty"}
-        extra_keys = set(parameters.keys()) - valid_keys
-        if extra_keys:
-            print(f"Warning: The following extra keys are present and will be ignored: {extra_keys}")
+        # Validate optional keys
+        valid_keys = {
+            "temperature": (0, 2),
+            "max_tokens": (1, float('inf')),
+            "top_p": (0, 1),
+            "frequency_penalty": (-2, 2),
+            "presence_penalty": (-2, 2)
+        }
+        for key, (min_val, max_val) in valid_keys.items():
+            if key in parameters and not (min_val <= parameters[key] <= max_val):
+                raise ValueError(f"The '{key}' must be between {min_val} and {max_val}.")
 
-        return {key: parameters[key] for key in parameters if key in valid_keys}
+        return parameters
     
 def chatgpt_submit(openai_client, chatgpt_parameters, chatgpt_messages):
     """
