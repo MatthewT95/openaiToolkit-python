@@ -25,23 +25,70 @@ def download_img(image_url, save_path="./image.jpg"):
     # Open the specified file in binary write mode and save the image data
     with open(save_path, 'wb') as handler:
         handler.write(img_data)
+
 class Chatgpt_messages:
+    """
+    A class to manage and organize messages exchanged in a ChatGPT-like system.
+    This includes messages from the system, user, and assistant roles.
+    """
+
     def __init__(self):
-        self.SYSTEM_ROLE_FLAG="system"
-        self.ASSISTANT_ROLE_FLAG="assistant"
-        self.USER_ROLE_FLAG="user"
-        self.messages = []  # Assign to instance
-    
-    def append_user_message(self,message):
-        self.messages.append({"role":self.USER_ROLE_FLAG,"content":message})
-    def append_system_message(self,message):
-        self.messages.append({"role":self.SYSTEM_ROLE_FLAG,"content":message})
-    def append_assistant_message(self,message):
-        self.messages.append({"role":self.ASSISTANT_ROLE_FLAG,"content":message})
+        """
+        Initializes the Chatgpt_messages object.
+        Attributes:
+            SYSTEM_ROLE_FLAG (str): Identifier for system messages.
+            ASSISTANT_ROLE_FLAG (str): Identifier for assistant messages.
+            USER_ROLE_FLAG (str): Identifier for user messages.
+            messages (list): List to store message objects in the format 
+                             {"role": <role>, "content": <message content>}.
+        """
+        self.SYSTEM_ROLE_FLAG = "system"
+        self.ASSISTANT_ROLE_FLAG = "assistant"
+        self.USER_ROLE_FLAG = "user"
+        self.messages = []  # Initialize an empty list to store messages
+
+    def append_user_message(self, message):
+        """
+        Appends a user message to the messages list.
+
+        Parameters:
+            message (str): The content of the user's message.
+        """
+        self.messages.append({"role": self.USER_ROLE_FLAG, "content": message})
+
+    def append_system_message(self, message):
+        """
+        Appends a system message to the messages list.
+
+        Parameters:
+            message (str): The content of the system's message.
+        """
+        self.messages.append({"role": self.SYSTEM_ROLE_FLAG, "content": message})
+
+    def append_assistant_message(self, message):
+        """
+        Appends an assistant message to the messages list.
+
+        Parameters:
+            message (str): The content of the assistant's message.
+        """
+        self.messages.append({"role": self.ASSISTANT_ROLE_FLAG, "content": message})
+
     def clear_messages(self):
-        self.messages=[]
+        """
+        Clears all messages from the messages list.
+        """
+        self.messages = []
+
     def get_messages(self):
+        """
+        Retrieves all messages currently stored.
+
+        Returns:
+            list: A list of message objects.
+        """
         return self.messages
+
 
 class Chatgpt_parameters:
     def __init__(self):
