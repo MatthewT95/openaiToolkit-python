@@ -1,5 +1,5 @@
 import logging
-from openAiToolkit.helper_classes import *
+from openai_helpers import *
 from openai import OpenAI  # OpenAI client for interacting with the API
 
 # Configure the logging
